@@ -356,14 +356,18 @@ export async function deleteClient(clientId) {
 
   const [dependencyCounts] = await sql`
     SELECT
-      (SELECT COUNT(*)::int FROM bookings WHERE client_id = ${clientId}) AS bookings_count,
+      (
+        SELECT COUNT(*)::int
+        FROM bookings
+        WHERE client_id = ${clientId}
+          AND status <> 'cancelled'
+          AND end_at >= NOW()
+      ) AS bookings_count,
       (SELECT COUNT(*)::int FROM estimates WHERE client_id = ${clientId}) AS estimates_count
   `;
 
   const bookingsCount = Number(dependencyCounts?.bookings_count || 0);
-  const estimatesCount = Number(dependencyCounts?.estimates_count || 0);
-
-  if (bookingsCount > 0 || estimatesCount > 0) {
+  if (bookingsCount > 0) {
     return {
       ok: false,
       reason: "has_dependencies",
@@ -373,10 +377,20 @@ export async function deleteClient(clientId) {
       },
       blockers: {
         bookings: bookingsCount,
-        estimates: estimatesCount,
+        estimates: 0,
       },
     };
   }
+
+  await sql`
+    DELETE FROM bookings
+    WHERE client_id = ${clientId}
+  `;
+
+  await sql`
+    DELETE FROM estimates
+    WHERE client_id = ${clientId}
+  `;
 
   await sql`
     DELETE FROM clients
