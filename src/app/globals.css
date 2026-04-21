@@ -3103,13 +3103,25 @@ body {
     grid-column: span 1;
   }
 
+  .admin-table {
+    gap: 12px;
+  }
+
   .admin-table-row {
     grid-template-columns: 1fr;
-    gap: 6px;
+    gap: 8px;
+    padding: 14px 14px;
+    border-color: #cbd5e1;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
   }
 
   .admin-projects-table-row {
     grid-template-columns: 1fr;
+  }
+
+  .admin-projects-table-row--button {
+    border: 1px solid #cbd5e1;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   }
 
   .admin-payments-table-row {
