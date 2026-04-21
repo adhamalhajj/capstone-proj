@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import AdminLayout from "../../../components/AdminLayout.js";
@@ -70,8 +70,8 @@ function mapProjectToForm(project) {
     quoteData,
     payments: Array.isArray(project?.payments) ? project.payments : [],
     ownerNotes: project?.ownerNotes || "",
-    estimatePdfUrl: project?.estimatePdfUrl || "",
-    estimatePdfName: project?.estimatePdfName || "",
+    estimatePdfUrl: project?.estimatePdfUrl || project?.estimate_pdf_url || "",
+    estimatePdfName: project?.estimatePdfName || project?.estimate_pdf_name || "",
   };
 }
 
@@ -98,12 +98,20 @@ function derivePaymentStatus({ total, depositAmount, totalPaid }) {
 }
 
 function getProjectQuoteHref(project) {
+  // 1. FIRST: Check for signed estimate PDF from estimate creation (client-named blob)
+  if (project?.estimatePdfUrl && project.estimatePdfUrl.trim()) {
+    return project.estimatePdfUrl;
+  }
+  
+  // 2. SECOND: Check for signed quote PDF
   if (project?.quoteSignedAt && project?.estimatePdfUrl) {
     return project.estimatePdfUrl;
   }
 
+  // 3. LAST: Generate new quote form
   return `/dashboard/projects/${project?.id}/quote`;
 }
+
 
 export default function AdminProjectDetailPage() {
   const params = useParams();
@@ -120,6 +128,9 @@ export default function AdminProjectDetailPage() {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [editingPaymentId, setEditingPaymentId] = useState(null);
   const [paymentForm, setPaymentForm] = useState(() => createPaymentItem());
+  const [quoteAction, setQuoteAction] = useState(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
+
 
   useEffect(() => {
     if (!projectId) return;
@@ -413,6 +424,70 @@ export default function AdminProjectDetailPage() {
       setSaving(false);
     }
   };
+
+useEffect(() => {
+  let mounted = true;
+  
+  async function loadQuoteAction() {
+    if (!project?.id || loading) {
+      if (mounted) setQuoteAction(null);
+      return;
+    }
+
+    setQuoteLoading(true);
+    
+    try {
+      // Check for linked signed estimate FIRST
+      const res = await fetch(`/api/admin/estimates/by-project/${project.id}`, {
+        cache: "no-store",
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (mounted) {
+        if (res.ok && data?.estimate?.status === "Signed" && data?.estimate?.pdfUrl) {
+          setQuoteAction({
+            type: "existing-pdf",
+            label: "Open signed estimate PDF",
+            href: data.estimate.pdfUrl,
+            target: "_blank",
+          });
+        } else if (formState.hasQuote || project?.quoteSignedAt) {
+          setQuoteAction({
+            type: "quote",
+            label: project?.quoteSignedAt ? "Open signed quotation" : "Open quotation",
+            href: `/dashboard/projects/${project.id}/quote`,
+            target: "_blank",
+          });
+        } else {
+          setQuoteAction({
+            type: "generate",
+            label: "Generate quotation",
+            onClick: handleGenerateQuote,
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Quote action load error:", err);
+      // Fallback to generate
+      if (mounted) {
+        setQuoteAction({
+          type: "generate",
+          label: "Generate quotation", 
+          onClick: handleGenerateQuote,
+        });
+      }
+    } finally {
+      if (mounted) setQuoteLoading(false);
+    }
+  }
+
+  loadQuoteAction();
+  
+  return () => {
+    mounted = false;
+  };
+}, [project?.id, project?.quoteSignedAt, loading, formState.hasQuote]); // eslint-disable-line react-hooks/exhaustive-deps
+// NOTE: removed dep array state formState.hasQuote to prevent infinite render
 
   return (
     <AdminLayout>
@@ -711,38 +786,64 @@ export default function AdminProjectDetailPage() {
 
           </section>
 
-          <div className="admin-modal__actions">
-            <div className="admin-modal__actions-left">
-              {!formState.hasQuote ? (
-                <button
-                  className="admin-btn admin-btn--primary"
-                  type="button"
-                  onClick={handleGenerateQuote}
-                  disabled={saving}
-                >
-                  {saving ? "Generating..." : "Generate quotation"}
+            <div className="admin-modal__actions">
+              <div className="admin-modal__actions-left">
+                {quoteLoading ? (
+                  <button className="admin-btn admin-btn--primary" disabled>
+                    Loading quote options...
+                  </button>
+                ) : quoteAction ? (
+                  (() => {
+                    const action = quoteAction;
+                    if (action.type === "existing-pdf") {
+                      return (
+                        <a
+                          className="admin-btn admin-btn--primary"
+                          href={action.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {action.label}
+                        </a>
+                      );
+                    }
+                    if (action.type === "generate") {
+                      return (
+                        <button
+                          className="admin-btn admin-btn--primary"
+                          type="button"
+                          onClick={action.onClick}
+                          disabled={saving}
+                        >
+                          {saving ? "Generating..." : action.label}
+                        </button>
+                      );
+                    }
+                    return (
+                      <Link
+                        className="admin-btn admin-btn--primary"
+                        href={action.href}
+                        target={action.target || "_self"}
+                      >
+                        {action.label}
+                      </Link>
+                    );
+                  })()
+                ) : (
+                  <button className="admin-btn admin-btn--primary" disabled>
+                    Loading...
+                  </button>
+                )}
+              </div>
+              <div className="admin-modal__actions-right">
+                <button className="admin-btn admin-btn--primary" type="submit" disabled={saving}>
+                  {saving ? "Saving..." : "Save project"}
                 </button>
-              ) : (
-                <Link
-                  className="admin-btn admin-btn--primary"
-                  href={getProjectQuoteHref(project)}
-                  target="_blank"
-                >
-                  {project?.quoteSignedAt && project?.estimatePdfUrl
-                    ? "Open signed quotation"
-                    : "Open quotation"}
+                <Link className="admin-btn admin-btn--ghost" href="/dashboard/projects">
+                  Cancel
                 </Link>
-              )}
+              </div>
             </div>
-            <div className="admin-modal__actions-right">
-              <button className="admin-btn admin-btn--primary" type="submit" disabled={saving}>
-                {saving ? "Saving..." : "Save project"}
-              </button>
-              <Link className="admin-btn admin-btn--ghost" href="/dashboard/projects">
-                Cancel
-              </Link>
-            </div>
-          </div>
         </form>
       )}
 

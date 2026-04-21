@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSql } from "../../../../../lib/db/client";
 import { getRequestUser } from "../../../../../lib/auth/server";
 import { put, del } from "@vercel/blob";
+import { findEstimateById } from "../../../../../lib/db/estimates.js";
 
 // Reusing the delete helper from your admin file
 async function deleteBlobPdf(pdfUrl) {
@@ -141,7 +142,43 @@ Server: ${now}
       WHERE id = ${id}
     `;
 
-    return NextResponse.json({ success: true, pdfUrl: signedPdfUrl });
+    // return NextResponse.json({ success: true, pdfUrl: signedPdfUrl });
+
+// Fetch the now-updated estimate directly
+const updatedEstimateRes = await sql`
+  SELECT 
+    e.id, e.title, e.service, e.price, e.status, e.notes,
+    e.pdf_url as "pdfUrl", e.pdf_name as "pdfName", e.created_at as "createdAt",
+    e.quote_requested_at as "quoteRequestedAt",
+    e.quote_converted_at as "quoteConvertedAt",
+    e.converted_project_id as "convertedProjectId"
+  FROM estimates e
+  JOIN clients c ON e.client_id = c.id
+  WHERE e.id = ${id}
+`;
+
+const updatedEstimate = updatedEstimateRes[0];
+
+return NextResponse.json({ 
+  success: true, 
+  estimate: {
+    id: updatedEstimate.id,
+    title: updatedEstimate.title,
+    service: updatedEstimate.service,
+    price: Number(updatedEstimate.price || 0).toFixed(2),
+    status: updatedEstimate.status,
+    notes: updatedEstimate.notes,
+    pdfUrl: updatedEstimate.pdfUrl || updatedEstimate.pdf_url,
+    pdfName: updatedEstimate.pdfName || updatedEstimate.pdf_name,
+    quoteRequestedAt: updatedEstimate.quoteRequestedAt,
+    quoteConvertedAt: updatedEstimate.quoteConvertedAt,
+    convertedProjectId: updatedEstimate.convertedProjectId,
+    createdAt: updatedEstimate.createdAt,
+  }
+});
+
+
+
   } catch (error) {
     console.error("Signing error:", error);
     return NextResponse.json(

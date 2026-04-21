@@ -15,7 +15,8 @@ export async function POST(req, { params }) {
     await ensureDatabaseSchema();
     const sql = await getSql();
     const rows = await sql`
-      SELECT e.id, e.quote_requested_at, e.quote_converted_at, c.email AS client_email
+      SELECT e.id, e.quote_requested_at, e.quote_converted_at, c.email AS client_email,
+             e.pdf_url, e.pdf_name, e.status
       FROM estimates e
       JOIN clients c ON c.id = e.client_id
       WHERE e.id = ${id}
@@ -40,9 +41,29 @@ export async function POST(req, { params }) {
     }
 
     const updatedEstimate = await requestEstimateQuote(id);
+    
+    // ✅ NEW: Copy signed PDF to project if exists
+    if (updatedEstimate.status === 'Signed' && updatedEstimate.pdfUrl && updatedEstimate.convertedProjectId) {
+      try {
+        const projectRes = await sql`
+          UPDATE projects 
+          SET 
+            estimate_pdf_url = ${updatedEstimate.pdfUrl},
+            estimate_pdf_name = ${updatedEstimate.pdfName || `estimate-${id}-signed.pdf`}
+          WHERE id = ${updatedEstimate.convertedProjectId}
+        `;
+      } catch (projectUpdateErr) {
+        console.warn("Failed to copy signed PDF to project:", projectUpdateErr);
+      }
+    }
+
     return NextResponse.json({ estimate: updatedEstimate });
   } catch (error) {
     console.error("CLIENT REQUEST QUOTE ERROR:", error);
     return NextResponse.json({ error: "Failed to request quote" }, { status: 500 });
   }
 }
+
+
+
+
