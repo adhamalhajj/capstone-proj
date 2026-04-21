@@ -35,7 +35,15 @@ export async function GET(req) {
         e.quote_requested_at as "quoteRequestedAt",
         e.quote_converted_at as "quoteConvertedAt",
         e.converted_project_id as "convertedProjectId",
+
+        e.recipient_name as "recipientName",
+        e.recipient_address as "recipientAddress", 
+        e.recipient_email as "recipientEmail",
+        e.recipient_phone as "recipientPhone",
+        e.services_included, 
+        e.quote_data as "quoteData",
         c.id as clientId, c.name as clientName,
+
         pr.quote_signed_at as "quoteSignedAt",
         pr.quote_signer_name as "quoteSignerName",
         pr.estimate_pdf_url as "convertedQuotePdfUrl",

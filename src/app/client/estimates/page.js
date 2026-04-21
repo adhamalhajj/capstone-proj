@@ -10,9 +10,11 @@ const STATUS_CLASS = {
   Rejected: "client-badge client-badge--rejected",
   "Quote requested": "client-badge client-badge--pending",
   "Converted to quote": "client-badge client-badge--active",
+  Signed: "inline-block px-3 py-1 text-xs font-semibold text-white bg-teal-500 rounded-full",  
 };
 
 function getEstimateStatusLabel(estimate) {
+  if (estimate?.notes?.includes('SIGNATURE')) return "Signed";
   if (estimate?.quoteConvertedAt) return "Converted to quote";
   if (estimate?.quoteRequestedAt) return "Quote requested";
   return estimate?.status || "Pending";
@@ -83,8 +85,8 @@ export default function ClientEstimatesPage() {
   const stats = useMemo(() => {
     return {
       total: estimates.length,
-      pending: estimates.filter((e) => getEstimateStatusLabel(e) === "Pending").length,
-      approved: estimates.filter((e) => e.status === "Approved").length,
+      pending: estimates.filter((e) => getEstimateStatusLabel(e) === "Pending" || getEstimateStatusLabel(e) === "Quote requested").length,
+      approved: estimates.filter((e) => e.status === "Approved" || getEstimateStatusLabel(e) === "Signed").length,
       rejected: estimates.filter((e) => e.status === "Rejected").length,
     };
   }, [estimates]);
@@ -119,11 +121,17 @@ export default function ClientEstimatesPage() {
         body: formData,
       });
 
-      if (res.ok) {
-        window.location.reload();
+      const data = await res.json();
+
+      if (res.ok && data.estimate) {
+        // window.location.reload();
+
+        setEstimates(prev => 
+          prev.map(e => e.id === estimateToSign.id ? data.estimate : e)
+        );
       } else {
-        const data = await res.json();
         alert(data.error || "Failed to submit signed document.");
+        return;
       }
     } catch (err) {
       console.error(err);
@@ -160,29 +168,87 @@ export default function ClientEstimatesPage() {
     }
   };
 
-  const handleDownload = async (estimate) => {
-    if (estimate?.quoteConvertedAt && estimate?.convertedProjectId) {
-      const res = await fetch(`/api/client/project/${estimate.convertedProjectId}`, {
-        cache: "no-store",
-      });
-      const data = await res.json().catch(() => ({}));
+const handleDownload = async (estimate) => {
+  if (estimate.pdfUrl && estimate.status === 'Signed') {
+    const link = document.createElement('a');
+    link.href = estimate.pdfUrl;
+    link.download = estimate.pdfName || `${estimate.title || 'estimate'}-signed.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    return;
+  }
 
-      if (!res.ok || !data?.project?.quoteData) {
-        throw new Error(data?.error || "Failed to load quote for download.");
-      }
-
-      await downloadQuotePdf(data.project, {
-        title: estimate?.title,
-        name: estimate?.recipientName || data.project.clientName,
-        address: estimate?.recipientAddress || data.project.address,
-        phone: estimate?.recipientPhone,
-        email: estimate?.recipientEmail,
-      });
-      return;
+  if (estimate?.quoteConvertedAt && estimate?.convertedProjectId) {
+    // Quote logic unchanged
+    const res = await fetch(`/api/client/project/${estimate.convertedProjectId}`, {
+      cache: "no-store",
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data?.project?.quoteData) {
+      throw new Error(data?.error || "Failed to load quote for download.");
     }
+    await downloadQuotePdf(data.project, {
+      title: estimate?.title,
+      name: estimate?.recipientName || data.project.clientName,
+      address: estimate?.recipientAddress || data.project.address,
+      phone: estimate?.recipientPhone,
+      email: estimate?.recipientEmail,
+    });
+    return;
+  }
 
-    await downloadEstimatePdf(estimate);
-  };
+  // Fetch full details OR construct missing quoteData
+  try {
+    const res = await fetch(`/api/client/estimates/${estimate.id}`, { cache: "no-store" });
+    const data = await res.json();
+
+    if (res.ok && data.estimate) {
+      const fullEstimate = data.estimate;
+      
+      // Construct quoteData if missing (basic estimate)
+      if (!fullEstimate.quoteData) {
+        const price = Number(fullEstimate.price || 0);
+        fullEstimate.quoteData = {
+          unitPrice: fullEstimate.price || "0.00",
+          quantity: "1",
+          gstRate: "5",
+          depositRate: "30",
+          subtotal: fullEstimate.price || "0.00",
+          gstAmount: (price * 0.05).toFixed(2),
+          depositAmount: (price * 0.3).toFixed(2),
+          total: fullEstimate.price || "0.00"
+        };
+        fullEstimate.servicesIncluded = [{
+          id: "service-1",
+          name: fullEstimate.service || "Estimate",
+          description: fullEstimate.notes || "",
+          price: fullEstimate.price || "0.00",
+          quantity: "1"
+        }];
+      }
+      
+      await downloadEstimatePdf(fullEstimate);
+    } else {
+      await downloadEstimatePdf(estimate);
+    }
+  } catch (fetchErr) {
+    console.warn("Full estimate fetch failed:", fetchErr);
+    // Fallback with constructed data
+    const fallbackEstimate = {
+      ...estimate,
+      quoteData: {
+        unitPrice: estimate.price || "0.00",
+        quantity: "1",
+        gstRate: "5",
+        depositRate: "30",
+        subtotal: estimate.price || "0.00",
+        total: estimate.price || "0.00"
+      }
+    };
+    await downloadEstimatePdf(fallbackEstimate);
+  }
+};
 
   const updateMenuPosition = useCallback((estimateId) => {
     const button = menuButtonRefs.current[estimateId];
@@ -413,7 +479,7 @@ export default function ClientEstimatesPage() {
                     }
                   }}
                 >
-                Download
+                View / Download
               </button>
               {canRequestQuote ? (
                 <button
