@@ -115,4 +115,37 @@ jobs:
           --version-label "${{ steps.version.outputs.label }}"
 
       - name: Wait for deployment readiness
-        run: aws elasticbeanstalk wait environment-updated --environment-names "${EB_ENVIRONMENT_NAME}"
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for attempt in {1..60}; do
+            read -r status health version <<< "$(
+              aws elasticbeanstalk describe-environments \
+                --environment-names "${EB_ENVIRONMENT_NAME}" \
+                --query 'Environments[0].[Status,Health,VersionLabel]' \
+                --output text
+            )"
+
+            echo "Attempt ${attempt}/60: status=${status}, health=${health}, version=${version}"
+
+            if [[ "${status}" == "Ready" ]]; then
+              echo "Elastic Beanstalk environment is ready."
+              exit 0
+            fi
+
+            if [[ "${status}" == "Terminated" || "${status}" == "Terminating" ]]; then
+              echo "Elastic Beanstalk environment entered terminal status: ${status}"
+              exit 1
+            fi
+
+            sleep 30
+          done
+
+          echo "Timed out waiting for Elastic Beanstalk to finish updating. Recent events:"
+          aws elasticbeanstalk describe-events \
+            --environment-name "${EB_ENVIRONMENT_NAME}" \
+            --max-records 20 \
+            --query 'Events[].{Time:EventDate,Severity:Severity,Message:Message}' \
+            --output table
+          exit 1
