@@ -9,6 +9,8 @@ export default function CommentCarousel() {
 
   const [shimmerKey, setShimmerKey] = useState(0);
 
+  const [selectedComment, setSelectedComment] = useState(null);
+
   useEffect(() => {
     async function loadReviews() {
       try {
@@ -51,9 +53,13 @@ if (!comments.length && shimmerKey === 0) {
   const getItem = (offset) =>
     comments[(index + offset + comments.length) % comments.length];
 
+  const closeModal = () => setSelectedComment(null);
+
+
   //  heelo
   return (
-      //                                                                    mt-16
+    <>
+      {/*                      mt-16 */}
     <div className="relative flex flex-col sm:flex-wrap justify-center w-full max-w-5xl mt-10 mx-auto px-4 bg-transparent">
       {/* <h2 className="text-3xl font-extrabold text-center border-b-2 p-2 border-[#477a40] inline-block mx-auto mb-7">
         What Our Clients Say
@@ -66,7 +72,7 @@ if (!comments.length && shimmerKey === 0) {
     <Bubble data={getItem(-1)} faded />
   </div>
 
-  <Bubble data={getItem(0)} key={`focused-${shimmerKey}`} focused />
+  <Bubble data={getItem(0)} key={`focused-${shimmerKey}`} focused onCommentClick={() => setSelectedComment(getItem(0))} />
 
   <div className="hidden lg:block">
     <Bubble data={getItem(1)} faded />
@@ -88,10 +94,16 @@ if (!comments.length && shimmerKey === 0) {
         </button>
       </div>
     </div>
+
+    {selectedComment && (
+      <CommentModal comment={selectedComment} onClose={closeModal} />
+    )}
+
+  </>
   );
 }
 
-function Bubble({ data, focused, faded }) {
+function Bubble({ data, focused, faded, onCommentClick }) {
   if (
     !data ||
     typeof data !== "object" ||
@@ -109,9 +121,10 @@ function Bubble({ data, focused, faded }) {
     <div
       className={`
         rounded-2xl p-6 shadow-2xl transition-all duration-500 w-72 relative
-        ${focused ? "scale-110 z-20" : "z-0"}
+        ${focused ? "scale-110 z-20 hover:cursor-pointer" : "z-0"}
         ${faded ? "scale-90 bg-white/80 text-gray-700" : "bg-white"}
       `}
+      onClick={focused ? onCommentClick : undefined}
     >
       
       {focused && (
@@ -124,7 +137,10 @@ function Bubble({ data, focused, faded }) {
 
 
       <div className={`relative z-40 ${focused ? "text-white" : "text-gray-700"}`}>
-        <p className={`text-sm leading-relaxed ${focused ? "more-shimmer" : ""} line-clamp-4`}>
+        <p className={`text-sm leading-relaxed ${focused ? "more-shimmer" : ""} line-clamp-4`}
+        role="button"
+        aria-label={`Read full comment by ${data.name}`}
+        >
           &quot;{data.text}&quot;
         </p>
         <p className={`mt-2 font-semibold ${focused ? "hidden" : ""}`}>★ {data.rating}</p>
@@ -135,6 +151,54 @@ function Bubble({ data, focused, faded }) {
   );
 }
 
+
+function CommentModal({ comment, onClose }) {
+  return (
+    <div 
+      className="fixed inset-0  z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white rounded-3xl p-8 max-w-2xl max-h-[80vh] overflow-y-auto shadow-2xl relative"
+        onClick={(e) => e.stopPropagation()}  // Prevent closing when clicking inside
+      >
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl font-bold rounded-full w-10 h-10 flex items-center justify-center hover:bg-gray-200 transition"
+          aria-label="Close modal"
+        >
+          ×
+        </button>
+
+        {/* Full comment */}
+        <div className="text-center mb-8">
+          <div className="flex justify-center mb-4">
+            {[...Array(comment.rating)].map((_, i) => (
+              <span key={i} className="text-3xl text-yellow-400">⭐</span>
+            ))}
+          </div>
+          <p className="text-lg leading-relaxed italic text-gray-800 max-w-3xl mx-auto">
+            &quot;{comment.text}&quot;
+          </p>
+          <p className="mt-6 font-bold text-2xl text-[#477a40] tracking-wide">
+            — {comment.name}
+          </p>
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex gap-4 justify-center">
+          <button
+            onClick={onClose}
+            className="px-6 py-3 bg-[#477a40] text-white rounded-xl font-semibold hover:bg-[#3a6634] transition active:scale-95 hover:cursor-pointer"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 
 // h-35
