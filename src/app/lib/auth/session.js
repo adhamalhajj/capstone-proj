@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { getPublicOrigin } from "./origin";
 
 export const AUTH_COOKIE_NAME = "lc_auth_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
@@ -67,12 +68,24 @@ export function verifySessionToken(token) {
   }
 }
 
+// Decide whether auth cookies should require HTTPS for the current deployment.
+export function shouldUseSecureCookies(req) {
+  const explicit = String(process.env.AUTH_COOKIE_SECURE || "").trim().toLowerCase();
+  if (explicit === "true") return true;
+  if (explicit === "false") return false;
+
+  const publicOrigin = getPublicOrigin(req);
+  if (publicOrigin) return publicOrigin.startsWith("https:");
+
+  return process.env.NODE_ENV === "production";
+}
+
 // Shared cookie settings for login/logout flows.
-export function sessionCookieOptions(maxAge = SESSION_TTL_SECONDS) {
+export function sessionCookieOptions(maxAge = SESSION_TTL_SECONDS, req) {
   return {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureCookies(req),
     path: "/",
     maxAge,
   };

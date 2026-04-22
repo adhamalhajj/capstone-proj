@@ -3,16 +3,10 @@ import { createUser, findUserByEmail, resolveRoleForEmail, updateUser } from "..
 import { setAuthCookie } from "../../../../lib/auth/server";
 import { ensureClientForUser } from "../../../../lib/db/clients";
 import { getGoogleOAuthClientId, getGoogleOAuthClientSecret } from "../../../../lib/auth/googleOAuth";
+import { getGoogleOAuthRedirectUri, getPublicOrigin } from "../../../../lib/auth/origin";
+import { shouldUseSecureCookies } from "../../../../lib/auth/session";
 
 const OAUTH_STATE_COOKIE = "lc_google_oauth_state";
-
-// Build the callback URL used for this environment/host.
-function getRedirectUri(req) {
-  return (
-    process.env.GOOGLE_OAUTH_REDIRECT_URI ||
-    `${new URL(req.url).origin}/api/auth/google/callback`
-  );
-}
 
 // Exchange the Google auth code for tokens after the user returns from Google.
 async function exchangeCodeForTokens({ code, redirectUri }) {
@@ -59,19 +53,20 @@ export async function GET(req) {
     const code = url.searchParams.get("code");
     const state = url.searchParams.get("state");
     const error = url.searchParams.get("error");
-    const redirectUri = getRedirectUri(req);
+    const publicOrigin = getPublicOrigin(req);
+    const redirectUri = getGoogleOAuthRedirectUri(req);
 
     if (error) {
-      return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(error)}`, url.origin));
+      return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(error)}`, publicOrigin));
     }
 
     if (!code || !state) {
-      return NextResponse.redirect(new URL("/login?error=missing_google_code", url.origin));
+      return NextResponse.redirect(new URL("/login?error=missing_google_code", publicOrigin));
     }
 
     const savedState = req.cookies.get(OAUTH_STATE_COOKIE)?.value;
     if (!savedState || savedState !== state) {
-      return NextResponse.redirect(new URL("/login?error=invalid_google_state", url.origin));
+      return NextResponse.redirect(new URL("/login?error=invalid_google_state", publicOrigin));
     }
 
     const tokenData = await exchangeCodeForTokens({ code, redirectUri });
@@ -81,7 +76,7 @@ export async function GET(req) {
     const name = String(googleProfile?.name || "").trim();
     const picture = String(googleProfile?.picture || "");
     if (!email || !name) {
-      return NextResponse.redirect(new URL("/login?error=invalid_google_profile", url.origin));
+      return NextResponse.redirect(new URL("/login?error=invalid_google_profile", publicOrigin));
     }
 
     let user = await findUserByEmail(email);
@@ -113,24 +108,24 @@ export async function GET(req) {
     }
 
     const destination = user.role === "admin" ? "/dashboard" : "/";
-    const res = NextResponse.redirect(new URL(destination, url.origin));
+    const res = NextResponse.redirect(new URL(destination, publicOrigin));
     res.cookies.set(OAUTH_STATE_COOKIE, "", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: shouldUseSecureCookies(req),
       sameSite: "lax",
       path: "/",
       maxAge: 0,
     });
-    return setAuthCookie(res, user);
+    return setAuthCookie(res, user, req);
   } catch (err) {
     console.error("GOOGLE CALLBACK ERROR:", err);
-    const url = new URL(req.url);
+    const publicOrigin = getPublicOrigin(req);
     const reason = String(err?.message || "google_signin_failed")
       .split(":")
       .slice(0, 2)
       .join(":");
     return NextResponse.redirect(
-      new URL(`/login?error=${encodeURIComponent(reason || "google_signin_failed")}`, url.origin),
+      new URL(`/login?error=${encodeURIComponent(reason || "google_signin_failed")}`, publicOrigin),
     );
   }
 }
