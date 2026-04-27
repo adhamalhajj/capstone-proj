@@ -4601,4 +4601,33 @@ body {
   }
 }
 
+
+html {
+  scrollbar-width: thin;
+  scrollbar-color: #477a40 #f3f3f3;
+}
+
+html::-webkit-scrollbar {
+  width: 12px;
+}
+
+html::-webkit-scrollbar-track {
+  background: #f3f3f3;
+}
+
+html::-webkit-scrollbar-thumb {
+  background-color: #477a40;
+  border-radius: 999px;
+  border: 3px solid #f3f3f3;
+}
+
+html::-webkit-scrollbar-thumb:hover {
+  background-color: #2f5a29;
+}
+
+
+
+
 /* LOL TYPE SHI GANG GANG */
+
+/* ONG TYPE SHITU */
