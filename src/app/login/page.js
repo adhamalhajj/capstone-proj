@@ -12,7 +12,7 @@ const LOGIN_FIELD_LIMITS = {
   password: 128,
 };
 
-// Map backend OAuth error codes to clearer messages for the UI.
+// Map backend OAuth error codes to clearer messages for the UI. fixing more shit lmao
 const OAUTH_ERROR_MESSAGES = {
   access_denied: "Google sign-in was canceled.",
   invalid_google_state: "Google sign-in expired or host mismatch. Start sign-in again from this same URL.",
