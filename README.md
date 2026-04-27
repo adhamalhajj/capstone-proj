@@ -95,3 +95,11 @@ npm run build
 ```bash
 npm run db:setup
 ```
+
+
+Accreditation:
+Levi Moreau
+Adlin Firdaus
+Theo Sanchez
+Jiro Roales
+Mrinal Jha
