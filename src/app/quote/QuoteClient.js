@@ -1,12 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import QuoteSuccessModal from "../components/QuoteSuccessModal.js"; 
 import { SERVICE_CATALOG } from "../lib/services/catalog.js";
 
-const ESTIMATE_SERVICE_KEYS = new Set(["fence", "deck", "pergola", "sod", "trees-shrubs"]);
 const MAX_ESTIMATE_INPUT = 1000;
 
 function sanitizeEstimateNumber(value, { integer = false } = {}) {
@@ -127,7 +126,6 @@ async function readApiResponse(res) {
 
 export default function QuoteClient() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   
   // Parse multiple services from query: ?service=fence,sod,deck-railing
   const serviceSlugs = (searchParams.get("service") || "")
@@ -169,11 +167,8 @@ export default function QuoteClient() {
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCalculating, setIsCalculating] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [summary, setSummary] = useState("");
-  const [instantEstimates, setInstantEstimates] = useState({}); // Changed to object: {fence: estimate, sod: estimate}
-  const [estimateErrors, setEstimateErrors] = useState({});
   const [displayPhone, setDisplayPhone] = useState('');
 
   const validateForm = () => {
@@ -193,139 +188,6 @@ export default function QuoteClient() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const formatMoney = (value, currency = "CAD") =>
-    new Intl.NumberFormat("en-CA", {
-      style: "currency",
-      currency,
-      maximumFractionDigits: 2,
-    }).format(Number(value || 0));
-
-  // Build payload for a SINGLE service
-  const buildEstimatePayload = (serviceKey) => {
-    if (!ESTIMATE_SERVICE_KEYS.has(serviceKey)) return null;
-
-    const claim = {
-      name: formData.client.name,
-      address: formData.client.address,
-      email: formData.client.email,
-      phone: formData.client.phone,
-    };
-
-    if (serviceKey === "fence") {
-      return {
-        claim,
-        projectType: "fence",
-        project: {
-          projectType: "fence",
-          gates: formData.project.fence.gates,
-          linearFt: formData.project.fence.linearFt,
-          height: formData.project.fence.height,
-          postSize: formData.project.fence.postSize,
-          pressureTreated: formData.project.fence.pressureTreated,
-        },
-      };
-    }
-    if (serviceKey === "deck") {
-      return {
-        claim,
-        projectType: "deck-railing",
-        project: {
-          projectType: "deck-railing",
-          length: formData.project.deck.length,
-          width: formData.project.deck.width,
-          height: formData.project.deck.height,
-          railing: formData.project.deck.railing,
-        },
-      };
-    }
-    if (serviceKey === "pergola") {
-      return {
-        claim,
-        projectType: "pergola",
-        project: {
-          projectType: "pergola",
-          length: formData.project.pergola.length,
-          width: formData.project.pergola.width,
-          height: formData.project.pergola.height,
-        },
-      };
-    }
-    if (serviceKey === "sod") {
-      return {
-        claim,
-        projectType: "sod",
-        project: {
-          projectType: "sod",
-          squareFt: formData.project.sod.squareFt,
-          length: formData.project.sod.length,
-          width: formData.project.sod.width,
-          condition: formData.project.sod.condition,
-          gradingNeeded: formData.project.sod.gradingNeeded,
-        },
-      };
-    }
-    if (serviceKey === "trees-shrubs") {
-      return {
-        claim,
-        projectType: "trees-shrubs",
-        project: {
-          projectType: "trees-shrubs",
-          numTrees: formData.project["trees-shrubs"].numTrees,
-          numShrubs: formData.project["trees-shrubs"].numShrubs,
-          treeSize: formData.project["trees-shrubs"].treeSize,
-          shrubSize: formData.project["trees-shrubs"].shrubSize,
-          purpose: formData.project["trees-shrubs"].purpose,
-          irrigation: formData.project["trees-shrubs"].irrigation,
-        },
-      };
-    }
-    return null;
-  };
-
-  // Estimate for just each service but when mutplie services selected
-  const fetchInstantEstimates = async () => {
-    const newEstimates = {};
-    const newErrors = {};
-
-    for (const service of selectedServices) {
-      if (ESTIMATE_SERVICE_KEYS.has(service.key)) {
-        try {
-          const payload = buildEstimatePayload(service.key);
-          if (payload) {
-            const res = await fetch("/api/estimate", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload),
-            });
-            const data = await res.json();
-            if (res.ok) {
-              newEstimates[service.key] = data;
-              delete newErrors[service.key];
-            } else {
-              newErrors[service.key] = data.details ? data.details.join(', ') : (data.error || "Estimate unavailable");
-            }
-          }
-        } catch (err) {
-          newErrors[service.key] = "Estimate calculation failed";
-        }
-      }
-    }
-
-    setInstantEstimates(newEstimates);
-    setEstimateErrors(newErrors);
-  };
-
-  const handleEstimatePreview = async () => {
-    if (!validateForm()) return;
-    setIsCalculating(true);
-    try {
-      await fetchInstantEstimates();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsCalculating(false);
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -334,8 +196,6 @@ export default function QuoteClient() {
     setIsSubmitting(true);
 
     try {
-      await fetchInstantEstimates();
-
       const projectTablesHTML = selectedServices.map(service => {
         const project = formData.project[service.key];
         const projectFieldsHTML = Object.entries(project)
@@ -353,90 +213,13 @@ export default function QuoteClient() {
           })
           .join("");
 
-        let estimateHTML = "";
-        if (instantEstimates[service.key]) {
-          const estimate = instantEstimates[service.key];
-          estimateHTML = `
-            <h3 style="border-bottom:2px solid #458500;margin-top:16px;padding-bottom:4px;">${service.title} Instant Estimate</h3>
-            <table style="width:100%;border-collapse:collapse;">
-              <tr><td><strong>Subtotal:</strong></td><td>${formatMoney(estimate.subtotal, estimate.currency)}</td></tr>
-              <tr><td><strong>Tax:</strong></td><td>${formatMoney(estimate.tax, estimate.currency)}</td></tr>
-              <tr><td><strong>Total:</strong></td><td><strong>${formatMoney(estimate.total, estimate.currency)}</strong></td></tr>
-            </table>
-          `;
-        }
-
         return `
           <div style="margin-bottom:24px;">
             <h3 style="border-bottom:2px solid #458500;padding-bottom:4px;">${service.title} Details</h3>
             <table style="width:100%;border-collapse:collapse;">${projectFieldsHTML}</table>
-            ${estimateHTML}
           </div>
         `;
       }).join("<hr style='border: none; border-top: 2px solid #eee; margin: 24px 0;'>");
-
-
-      let projectSummaryHTML = "";
-      const estimatableServices = selectedServices.filter(s => ESTIMATE_SERVICE_KEYS.has(s.key));
-      
-      if (selectedServices.length > 1 && estimatableServices.length > 0) {
-        const projectSubtotal = Object.values(instantEstimates)
-          .reduce((sum, est) => sum + (est?.subtotal || 0), 0);
-        const projectTax = Object.values(instantEstimates)
-          .reduce((sum, est) => sum + (est?.tax || 0), 0);
-        const projectTotal = Object.values(instantEstimates)
-          .reduce((sum, est) => sum + (est?.total || 0), 0);
-
-        const serviceBreakdownHTML = estimatableServices.map(service => {
-          const estimate = instantEstimates[service.key];
-          if (estimate) {
-            return `
-              <tr>
-                <td style="font-weight: 500;">${service.title}</td>
-                <td style="text-align: right; font-weight: bold;">${formatMoney(estimate.total, estimate.currency)}</td>
-              </tr>
-            `;
-          }
-          return `<tr><td style="font-weight: 500;">${service.title}</td><td style="text-align: right;">Estimate pending</td></tr>`;
-        }).join("");
-
-        projectSummaryHTML = `
-          <div style="margin:24px 0;border:2px solid #458500;border-radius:8px;padding:10px;">
-            <h3 style="border-bottom:2px solid #458500;padding-bottom:4px;margin-bottom:16px;">Project Summary</h3>
-            
-            <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
-              <tr>
-                <td style="padding:8px 0;"><strong>Services (${estimatableServices.length}):</strong></td>
-                <td style="text-align: right;padding:8px 0;font-weight:bold;">${estimatableServices.map(s => s.title).join(", ")}</td>
-              </tr>
-            </table>
-
-            <table style="width:100%;border-collapse:collapse;">
-              ${serviceBreakdownHTML}
-              <tr style="border-top:2px solid #458500;">
-                <td style="padding:12px 0 8px 0;"><strong>Project Subtotal:</strong></td>
-                <td style="text-align: right;padding:12px 0 8px 0;font-weight:bold;">${formatMoney(projectSubtotal)}</td>
-              </tr>
-              <tr>
-                <td style="padding:8px 0;"><strong>Tax:</strong></td>
-                <td style="text-align: right;padding:8px 0;font-weight:bold;">${formatMoney(projectTax)}</td>
-              </tr>
-              <tr style="border-top:1px solid #ddd;">
-                <td style="padding:12px 0;"><strong>PROJECT TOTAL:</strong></td>
-                <td style="text-align: right;padding:12px 0;font-weight:bold;color:#458500;">${formatMoney(projectTotal)}</td>
-              </tr>
-            </table>
-
-            ${estimatableServices.length < selectedServices.length ? `
-              <p style="color:#666;font-style:italic;margin-top:8px;">
-                * Some services don't have instant estimates available
-              </p>
-            ` : ""}
-          </div>
-        `;
-
-      }
-
 
       const formatPhoneNumber = (phone) => {
         if (!phone) return "-";
@@ -464,8 +247,6 @@ export default function QuoteClient() {
               <tr><td><strong>Address:</strong></td><td>${formData.client.address || "-"}</td></tr>
               <tr><td><strong>Phone:</strong></td><td>${formatPhoneNumber(formData.client.phone)}</td></tr>
             </table>
-          
-            ${projectSummaryHTML}
 
             ${projectTablesHTML}
 
@@ -477,7 +258,6 @@ export default function QuoteClient() {
         </div>
       `;
 
-      // Handle file attachments
       const attachments = formData.files.length > 0
         ? await Promise.all(
             Array.from(formData.files).map((file) => buildQuoteAttachment(file))
@@ -506,53 +286,13 @@ export default function QuoteClient() {
         throw new Error(data?.error || "Send failed");
       }
 
-      setSummary(`Thanks ${formData.client.name}! Details for ${selectedServices.length} service${selectedServices.length > 1 ? 's' : ''} sent to our team.`);
+      setSummary(`Thank you, ${formData.client.name}! We've received your request and will send you a detailed estimate shortly.`);
       setShowSuccess(true);
     } catch (err) {
       console.error(err);
       alert(err.message || "Send failed - try again or contact us.");
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  // Fetch estimate for one service (individual buttons)
-  const fetchSingleEstimate = async (serviceKey) => {
-    if (!ESTIMATE_SERVICE_KEYS.has(serviceKey)) return;
-
-    try {
-      const payload = buildEstimatePayload(serviceKey);
-      if (!payload) return;
-
-      const res = await fetch("/api/estimate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        setInstantEstimates((prev) => ({
-          ...prev,
-          [serviceKey]: data,
-        }));
-        setEstimateErrors((prev) => ({
-          ...prev,
-          [serviceKey]: undefined,
-        }));
-      } else {
-        setEstimateErrors(prev => ({
-          ...prev, 
-          [serviceKey]: data.details ? data.details.join(', ') : (data.error || "Estimate unavailable")
-        }));
-      }
-    } catch (err) {
-      console.error(err);
-      setEstimateErrors((prev) => ({
-        ...prev,
-        [serviceKey]: "Estimate calculation failed",
-      }));
     }
   };
 
@@ -569,8 +309,6 @@ export default function QuoteClient() {
       },
       files: [],
     });
-    setInstantEstimates({});
-    setEstimateErrors({});
     setSummary("");
   };
   useEffect(() => {
@@ -862,150 +600,13 @@ export default function QuoteClient() {
                 </div>
               )}
 
-           {/*      Conditional to change UI based on number of services selected         */}
-            {selectedServices.length > 1 && ESTIMATE_SERVICE_KEYS.has(service.key) && (
-              <div className="mt-8 pt-6 border-t border-gray-200">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
-                  <h4 className="text-xl font-extrabold border-b-2 border-[#477a40] pb-2">{service.title} Instant Estimate</h4>
-                  <button
-                    type="button"
-                    onClick={() => fetchSingleEstimate(service.key)}
-                    disabled={!isClientComplete || isCalculating}
-                    className={`rounded-xl bg-[#477a40] px-4 py-2 text-sm font-bold text-white hover:bg-[#3a6634] active:scale-95 disabled:opacity-60 ${isCalculating || !isClientComplete ? 'cursor-not-allowed' : 'hover:cursor-pointer'}`}
-                  >
-                    {isCalculating ? 'Calculating...' : 'Calculate'}
-                  </button>
-                </div>
-
-                {estimateErrors[service.key] && (
-                  <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                    {estimateErrors[service.key]}
-                  </p>
-                )}
-{/* 
-                {estimateErrors[service.key] && (
-                  <div className="mt-3 space-y-1">
-                    <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 font-medium">
-                      {estimateErrors[service.key]}
-                    </p>
-                  </div>
-                )} */}
-
-                {instantEstimates[service.key] && (
-                  <div className="mt-4 space-y-3">
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                      <div className="rounded-lg border border-gray-200 bg-white p-3">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Subtotal</p>
-                        <p className="text-lg font-bold text-gray-900">
-                          {formatMoney(instantEstimates[service.key].subtotal, instantEstimates[service.key]?.currency || "CAD")}
-                        </p>
-                      </div>
-                      <div className="rounded-lg border border-gray-200 bg-white p-3">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Tax</p>
-                        <p className="text-lg font-bold text-gray-900">
-                          {formatMoney(instantEstimates[service.key].tax, instantEstimates[service.key]?.currency || "CAD")}
-                        </p>
-                      </div>
-                      <div className="rounded-lg border border-gray-200 bg-white p-3">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Total</p>
-                        <p className="text-lg font-bold text-[#477a40]">
-                          {formatMoney(instantEstimates[service.key].total, instantEstimates[service.key]?.currency || "CAD")}
-                        </p>
-                      </div>
-                    </div>
-
-                    {Array.isArray(instantEstimates[service.key].lineItems) && 
-                    instantEstimates[service.key].lineItems.length > 0 && (
-                      <div className="rounded-lg border border-gray-200 bg-white p-3">
-                        <p className="mb-2 text-sm font-bold text-gray-900">Line Items</p>
-                        <ul className="space-y-1 text-sm text-gray-700 max-h-48 overflow-y-auto">
-                          {instantEstimates[service.key].lineItems.map((item, idx) => (
-                            <li key={`${service.key}-${item.label}-${idx}`} className="flex items-center justify-between gap-3 py-1 border-b border-gray-100 last:border-b-0">
-                              <span className="truncate">{item.label}</span>
-                              <span className="font-semibold text-gray-900 min-w-[80px] text-right">
-                                {formatMoney(item.total, instantEstimates[service.key].currency)}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
   </section>
 ))}
 
-
-{/* {selectedServices.length === 1 && ESTIMATE_SERVICE_KEYS.has(service.key) && ( )} */}
-
-  
-{selectedServices.length === 1 && ESTIMATE_SERVICE_KEYS.has(selectedServices[0].key) && (
-<section key={selectedServices[0].key} className="rounded-xl border border-[#477a40]/20 p-8 bg-white/50 shadow-lg">
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <h3 className="text-2xl font-extrabold border-b-2 border-[#477a40] pb-2">
-        {selectedServices[0].title} Instant Estimate
-      </h3>
-      <button
-        type="button"
-        onClick={() => fetchSingleEstimate(selectedServices[0].key)}
-        disabled={!isClientComplete || isCalculating}
-        className="rounded-xl bg-[#477a40] px-4 py-2 text-sm font-bold text-white hover:bg-[#3a6634] hover:cursor-pointer active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
-      >
-        Calculate Estimate
-      </button>
-    </div> 
-
-    {estimateErrors[selectedServices[0].key] && (
-      <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-        {estimateErrors[selectedServices[0].key]}
-      </p>
-    )}
-
-    {instantEstimates[selectedServices[0].key] && (
-      <div className="mt-4 space-y-3">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="rounded-lg border border-gray-200 bg-white p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Subtotal</p>
-            <p className="text-lg font-extrabold text-gray-900">
-              {formatMoney(instantEstimates[selectedServices[0].key].subtotal, instantEstimates[selectedServices[0].key]?.currency || "CAD")}
-            </p>
+          {/* Pricing info notice */}
+          <div className="rounded-xl border border-[#477a40]/20 p-6 bg-[#f6faf4] text-center">
+            <p className="text-base font-semibold text-[#477a40]">Our team will review your request and send you a detailed estimate within 1–2 business days.</p>
           </div>
-          <div className="rounded-lg border border-gray-200 bg-white p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Tax</p>
-            <p className="text-lg font-extrabold text-gray-900">
-              {formatMoney(instantEstimates[selectedServices[0].key].tax, instantEstimates[selectedServices[0].key]?.currency || "CAD")}
-            </p>
-          </div>
-          <div className="rounded-lg border border-gray-200 bg-white p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Total</p>
-            <p className="text-lg font-extrabold text-[#477a40]">
-              {formatMoney(instantEstimates[selectedServices[0].key].total, instantEstimates[selectedServices[0].key]?.currency || "CAD")}
-            </p>
-          </div>
-        </div>
-
-        {Array.isArray(instantEstimates[selectedServices[0].key].lineItems) && 
-         instantEstimates[selectedServices[0].key].lineItems.length > 0 && (
-          <div className="rounded-lg border border-gray-200 bg-white p-3">
-            <p className="mb-2 text-sm font-bold text-gray-900">Line Items</p>
-            <ul className="space-y-1 text-sm text-gray-700 max-h-48 overflow-y-auto">
-              {instantEstimates[selectedServices[0].key].lineItems.map((item, idx) => (
-                <li key={`${selectedServices[0].key}-${item.label}-${idx}`} className="flex items-center justify-between gap-3 py-1 border-b border-gray-100 last:border-b-0">
-                  <span className="truncate">{item.label}</span>
-                  <span className="font-semibold text-gray-900 min-w-[80px] text-right">
-                    {formatMoney(item.total, instantEstimates[selectedServices[0].key].currency)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-    )}
-</section>
-)}
 
 
           {/* File upload - shared to resend email template*/}
@@ -1021,87 +622,9 @@ export default function QuoteClient() {
             </div>
           </section>
 
-          {/* Calculate All Button Will be replaced with a project total estimate section - rmeoved */}
-          {selectedServices.length > 1 && selectedServices.some(s => ESTIMATE_SERVICE_KEYS.has(s.key)) && (
-            <section className="rounded-xl border border-[#477a40]/20 p-8 bg-white/50 shadow-lg">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <h3 className="text-2xl font-extrabold border-b-2 border-[#477a40] pb-2">Project Summary</h3>
-                <button
-                  type="button"
-                  onClick={handleEstimatePreview}
-                  disabled={!isClientComplete || isCalculating}
-                  className="rounded-xl bg-[#477a40] px-4 py-2 text-sm font-bold text-white active:scale-95 hover:bg-[#3a6634] disabled:opacity-60 hover:cursor-pointer disabled:cursor-not-allowed"
-                >
-                  {isCalculating ? "Calculating..." : `Calculate All (${selectedServices.filter(s => ESTIMATE_SERVICE_KEYS.has(s.key)).length})`}
-                </button>
-              </div>
-
-              {selectedServices.filter(s => ESTIMATE_SERVICE_KEYS.has(s.key)).length === 0 && (
-                <p className="mt-3 text-sm text-gray-600">
-                  Instant estimates available for Fence, Deck & Railing, Pergola, Sod, and Trees & Shrubs.
-                </p>
-              )}
-
-              {Object.values(estimateErrors).some(error => error) && (
-                <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                  Some estimates unavailable. Check individual service calculators above.
-                </p>
-              )}
-
-              {/* Show grand total when ALL estimates loaded */}
-              {selectedServices.filter(s => ESTIMATE_SERVICE_KEYS.has(s.key)).every(s => instantEstimates[s.key]) && (
-                <div className="mt-4 space-y-3">
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    <div className="rounded-lg border border-gray-200 bg-white p-3">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Project Subtotal</p>
-                      <p className="text-lg font-extrabold text-gray-900">
-                        {formatMoney(
-                          Object.values(instantEstimates).reduce((sum, est) => sum + (est.subtotal || 0), 0)
-                        )}
-                      </p>
-                    </div>
-                    <div className="rounded-lg border border-gray-200 bg-white p-3">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Tax</p>
-                      <p className="text-lg font-extrabold text-gray-900">
-                        {formatMoney(
-                          Object.values(instantEstimates).reduce((sum, est) => sum + (est.tax || 0), 0)
-                        )}
-                      </p>
-                    </div>
-                    <div className="rounded-lg border border-gray-200 bg-white p-3">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Total</p>
-                      <p className="text-lg font-extrabold text-[#477a40]">
-                        {formatMoney(
-                          Object.values(instantEstimates).reduce((sum, est) => sum + (est.total || 0), 0)
-                        )}
-                      </p>
-                    </div>
-                  </div>
-
-                  {Object.values(instantEstimates).some(est => Array.isArray(est.lineItems) && est.lineItems.length > 0) && (
-                    <div className="rounded-lg border border-gray-200 bg-white p-6">
-                      <h4 className="mb-4 text-sm font-bold text-gray-900 uppercase tracking-wide">Service Breakdown</h4>
-                      <div className="space-y-2">
-                        {selectedServices.map(service => instantEstimates[service.key] && (
-                          <div key={service.key} className="flex items-center justify-between border-b border-gray-100 pb-2 last:border-b-0">
-                            <span className="font-medium text-gray-900">{service.title}</span>
-                            <span className="font-bold text-[#477a40]">
-                              {formatMoney(instantEstimates[service.key].total)}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </section>
-          )}
-
-
           <button
             type="submit"
-            disabled={isSubmitting || isCalculating || !isClientComplete}
+            disabled={isSubmitting || !isClientComplete}
             className="w-full flex items-center justify-center text-center max-h-17 rounded-2xl bg-[#477a40] px-8 py-10 sm:py-6 text-xl font-bold text-white hover:cursor-pointer hover:bg-white hover:border-[#477A40] hover:text-[#477A40] hover:scale-105 hover:border-2 active:scale-95 shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? "Sending..." : `${selectedServices.length > 1 ? `Send Estimate Request for ${selectedServices.length} Services` : 'Send Estimate Request'}`}
