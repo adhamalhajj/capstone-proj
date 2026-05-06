@@ -1,224 +1,223 @@
 import Link from "next/link";
-import Image from "next/image";
 
-import NavBar from "./components/Navbar.js";
-import Footer from "./components/Footer.js";
-import DropDownMenu from "./components/DropDownMenu.js";
-
+import NavBar          from "./components/Navbar.js";
+import Footer          from "./components/Footer.js";
 import CommentCarousel from "./components/CommentsCarousel.js";
+import ProjectCarousel from "./components/ProjectCarousel.js";
+import ServicesSection from "./components/ServicesSection.js";
+import HowItWorks      from "./components/HowItWorks.js";
+import ServiceArea     from "./components/ServiceArea.js";
+import FAQSection      from "./components/FAQSection.js";
+import AnimatedShaderHero from "@/components/ui/animated-shader-hero.js";
 
+/* ─── SEO Metadata ─────────────────────────────────────────────────── */
+export const metadata = {
+  title: "Calgary Landscaping, Fence & Deck Experts | Landscape Craftsmen",
+  description:
+    "Landscape Craftsmen provides expert fence installation, deck building, pergola construction & sod installation in Calgary. Licensed & insured. Free estimates — call (587) 438-6672.",
+  keywords:
+    "fence installation Calgary, deck builder Calgary, pergola Calgary, sod installation Calgary, landscaping Calgary, trees shrubs Calgary, Calgary outdoor living",
+  openGraph: {
+    title: "Calgary Landscaping & Outdoor Living | Landscape Craftsmen",
+    description:
+      "Expert fence, deck, pergola & sod installation across Calgary. Licensed, insured, free estimates.",
+    url: "https://landscapecraftsmen.ca",
+    siteName: "Landscape Craftsmen",
+    locale: "en_CA",
+    type: "website",
+  },
+};
+
+/* ─── LocalBusiness JSON-LD Schema ─────────────────────────────────── */
+const LOCAL_BUSINESS_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "HomeAndConstructionBusiness",
+  name: "Landscape Craftsmen",
+  url: "https://landscapecraftsmen.ca",
+  telephone: "+15874386672",
+  email: "landscapecraftsmen@yahoo.com",
+  address: {
+    "@type": "PostalAddress",
+    addressLocality: "Calgary",
+    addressRegion: "AB",
+    addressCountry: "CA",
+  },
+  geo: {
+    "@type": "GeoCoordinates",
+    latitude: 51.0447,
+    longitude: -114.0719,
+  },
+  areaServed: [
+    "Calgary", "Airdrie", "Cochrane", "Chestermere", "Okotoks",
+  ],
+  openingHoursSpecification: [
+    { "@type": "OpeningHoursSpecification", dayOfWeek: ["Monday","Tuesday","Wednesday","Thursday","Friday"], opens: "08:00", closes: "18:00" },
+    { "@type": "OpeningHoursSpecification", dayOfWeek: ["Saturday"], opens: "09:00", closes: "16:00" },
+  ],
+  makesOffer: [
+    { "@type": "Offer", itemOffered: { "@type": "Service", name: "Fence Installation Calgary" } },
+    { "@type": "Offer", itemOffered: { "@type": "Service", name: "Deck Builder Calgary" } },
+    { "@type": "Offer", itemOffered: { "@type": "Service", name: "Pergola Calgary" } },
+    { "@type": "Offer", itemOffered: { "@type": "Service", name: "Sod Installation Calgary" } },
+    { "@type": "Offer", itemOffered: { "@type": "Service", name: "Trees and Shrubs Calgary" } },
+  ],
+  sameAs: [
+    "https://www.facebook.com/p/Landscape-Craftsmen-61575247719417/",
+    "https://www.instagram.com/landscape.craftsmen",
+  ],
+};
+
+const FAQ_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "How much does fence installation cost in Calgary?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Fence installation in Calgary typically ranges from $25–$60 per linear foot depending on material. Our free estimates include materials, labour, and permit guidance.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Do I need a permit for a deck or fence in Calgary?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Decks over 0.6 m above grade require a development permit in Calgary. Fences over 1.8 m also require approval. We guide you through the permit process at no extra cost.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "When is the best time to install sod in Calgary?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "The ideal window for sod installation in Calgary is May through early September when soil temperatures are above 10°C.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "How long does pergola installation take in Calgary?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Most pergola installations take 1–3 days depending on size and complexity.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Do you offer free landscaping estimates in Calgary?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes — free, no-obligation estimates for all services across Calgary and surrounding areas.",
+      },
+    },
+  ],
+};
+
+/* ─── Page ──────────────────────────────────────────────────────────── */
 export default function Home() {
-
-  const images = [
-    "/projects/Img5.JPG",
-    "/projects/Img1.JPG",
-    "/projects/Img2.JPG",
-    "/projects/Img4.JPG",
-    "/projects/Img3.JPG",
-    "/projects/Img6.JPG"
-  ];
-
-
-
-
   return (
-    
-    <div className="overflow-hidden bg-white">
-        <header className="flex w-full bg-white">
-          <NavBar />         
-        </header> 
+    <div className="bg-white">
+      {/* JSON-LD structured data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(LOCAL_BUSINESS_SCHEMA) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_SCHEMA) }}
+      />
 
-         {/* HERE */}
-        {/* <DropDownMenu /> */}
+      {/* ── Sticky header ── */}
+      <header className="sticky top-0 z-50 w-full bg-white shadow-sm">
+        <NavBar />
+      </header>
 
+      <main className="flex flex-col w-full bg-white">
 
+        {/* ── H1 Hero ── */}
+        <AnimatedShaderHero
+          trustBadge={{
+            text: "Licensed · Insured · Serving Calgary Since 2020",
+            icons: ["🌿"],
+          }}
+          headline={{
+            line1: "Calgary's Trusted",
+            line2: "Outdoor Craftsmen.",
+          }}
+          subtitle="Expert fence installation, deck building, pergola construction & sod installation across Calgary. Clean work, clear communication, results that last."
+          buttons={{
+            primary:   { text: "Request a Free Quote",    href: "/services-quote" },
+            secondary: { text: "Book an Appointment", href: "/book" },
+          }}
+        />
 
+        {/* ── H2: Landscaping Services in Calgary ── */}
+        {/*     ServicesSection renders its own H2 + H3s internally */}
+        <ServicesSection />
 
-      <main className="flex flex-col min-h-screen w-full bg-white gap-15">
+        {/* ── H2: Our Simple Process ── */}
+        <HowItWorks />
 
+        {/* ── H2: Our Calgary Projects ── */}
+        <section className="w-full py-12 sm:py-16">
+          <div className="flex items-center justify-center mb-6 px-4">
+            <h2 className="text-3xl sm:text-4xl font-extrabold border-b-2 border-[#477a40] pb-2 text-black text-center">
+              Our Calgary Projects
+            </h2>
+          </div>
+          <ProjectCarousel />
+        </section>
 
-        <div className="w-full mx-auto max-w-8xl px-4">
-          <section className="max-w-350 relative mt-10 overflow-hidden rounded-xl border border-[#477a40]/20 bg-linear-to-br from-[#477a40]/10 via-white to-white p-8 shadow-lg md:p-12 mx-auto flex flex-col lg:flex-row gap-x-25 gap-y-8 lg:gap-y-0">
-            <div className="flex  flex-col w-full lg:w-auto lg:flex-1">
-              <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[#477a40]/20 blur-3xl" />
-              <div className="pointer-events-none absolute -bottom-28 -left-28 h-72 w-72 rounded- bg-[#477a40]/10 blur-3xl" />
-  
-              <div className="relative z-10">
-                <p className="inline-flex items-center gap-2 rounded-full bg-[#477a40]/10 px-3 py-1 text-sm font-semibold text-[#2f5a29]">
-                  Licensed • Insured • Free Estimates
-                </p>
-                
-                {/* Use the following for reference to fix title not resizing properly:
-                
-                mt-4 text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 break-words hyphens-auto leading-tight w-full max-w-none overflow-visible */}
-                <h1 className="mt-4 text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900 w-full sm:160">
-                  The Contracting Company You Can Trust
-                </h1>
-  
-                <h2 className="mt-4 max-w-2xl text-base sm:text-lg leading-relaxed text-black sm:font-bold">
-                  All your landscaping needs done by professionals—clean work, clear
-                  communication, and results that last.
-                </h2>
-  
-                <p className="mt-4 max-w-2xl text-lg leading-relaxed text-gray-600 hidden sm:block">
-                  Built from the ground up with a passion for quality craftsmanship, our company has grown from small local projects into a trusted name in landscaping and outdoor construction. What started as a commitment to doing honest, detail-driven work has evolved into a reputation for delivering clean designs, durable builds, and dependable service. From custom fences and decks to full yard transformations, we take pride in every project and every client relationship.
-                </p>
-              </div>  
-              
-              {/* ml-138 for learn more positioning */}
-              <Link href="/about" className="font-bold active:text-[15px] text-right h-6 mr-0 min-[1219px]:mr-6 max-[1220px]:mt-5  min-[1221px]:mt-0"><span className="hover:underline hover:underline-offset-4 ">Learn More</span> &rarr;</Link>
-          
-            </div>
+        {/* ── H2: Serving All of Calgary & Area ── */}
+        <ServiceArea />
 
-            <div className="flex flex-col gap-10 items-center">
-              <h3 className="w-full max-w-xs sm:max-w-sm md:max-w-sm lg:w-85 text-center p-2 text-3xl font-extrabold border-b-2 border-[#477a40] text-black">
-                What We Offer
-              </h3>
-
-              <div className="justify-center gap-y-5 gap-x-10 items-center w-130 z-200 flex flex-col 
-                min-[640px]:flex-row 
-                max-[1024px]:flex-wrap
-                min-[1024px]:max-[1149px]:flex-col 
-                min-[1150px]:flex-row 
-                min-[1024px]:flex-wrap  *:hover:scale-102 *:text-center *:items-center *:align-center *:flex *:justify-center *:sm:text-4xl *:text-2xl *:font-black *:cursor-pointer *:transition-all">
-               
-                <Link href="/services?service=fence" className="h-25 w-60 rounded-2xl shadow-xl fence-bg active:scale-98"> 
-                  <p className="fence-mask">Fence</p>
-
-                </Link>
-                <Link href="/services?service=deck-railing" className="h-25 w-60 rounded-2xl shadow-xl deck-bg active:scale-98">
-                  <p className="deck-mask">Deck & Railing</p>
-
-                </Link>     
-                <Link href="/services?service=pergola" className="h-25 w-60 rounded-2xl shadow-xl pergola-bg active:scale-98">
-                  <p className="pergola-mask">Pergola</p>
-
-                </Link>
-                <Link href="/services?service=sod" className="h-25 w-60 rounded-2xl shadow-xl sod-bg active:scale-98">
-                  <p className="sod-mask">Sod</p>
-
-                </Link> 
-
-                <Link href="/services?service=trees-shrubs" className="h-25 w-60 rounded-2xl shadow-xl trees-bg active:scale-98">
-                  <p className="trees-mask">Trees & Shrubs</p>
-
-                </Link>           
-                
-
-
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <div className="flex items-center justify-center">
-          <h2 className="mx-10 w-full max-w-sm  lg:w-85 text-center p-2 text-3xl font-extrabold border-b-2 border-[#477a40] text-black">Our Projects</h2>
-        </div>
-
-
-        <div className="w-full mx-auto max-w-6xl px-4 relative">
-          <div className="flex flex-wrap justify-center items-center gap-4 relative w-full">
-
-            {/* Top Left */}
-            <div className="relative rounded-xl overflow-hidden shadow-lg shrink-0 w-80 h-80">
-              <Image src={images[4]} alt="Project 5" fill sizes="400px" className="object-cover hover:brightness-110 transition-all" loading="eager" />
-            </div>
-
-            {/* Top Center */}
-            <div className="relative rounded-xl overflow-hidden shadow-lg shrink-0 w-80 h-60">
-              <Image src={images[0]} alt="Project 1" fill sizes="550px" className="object-cover hover:brightness-110 transition-all" />
-            </div>
-
-            {/* Top Right */}
-            <div className="relative rounded-xl overflow-hidden shadow-lg shrink-0 lg:w-48 w-80 h-72">
-              <Image src={images[1]} alt="Project 2" fill sizes="350px" className="object-cover hover:brightness-110 transition-all" />
-            </div>
-
-            {/* Center Button */}
-
-            {/* hover:bg-[#f3fff3] */}
-            <div className="flex justify-center items-center w-full my-4">
-              <div className="p-4 mx-auto text-white rounded-2xl bg-[#477a40] text-2xl font-normal w-72 text-center hover:cursor-pointer border-2 border-transparent hover:bg-white hover:border-[#477A40] hover:text-[#477A40] transition-all duration-200 hover:scale-105 active:scale-95 shadow-2xl backdrop-blur-sm">
-                <Link href="/quote">Request a Quote</Link>
-              </div>
-            </div>
-
-            {/* Bottom Left */}
-            <div className="relative rounded-xl overflow-hidden shrink-0 lg:w-56 w-80 h-72 transparent-gradient">
-              <Image src={images[3]} alt="Project 4" fill sizes="200px" className="object-cover hover:brightness-110 transition-all " />
-            </div>
-
-            {/* Bottom Middle */}
-            <div className="relative rounded-xl overflow-hidden shrink-0 w-80 h-64">
-              <Image src={images[2]} alt="Project 3" fill sizes="500px" className="object-cover hover:brightness-110 transition-all transparent-gradient" />
-            </div>
-
-            {/* Bottom Right */}
-            <div className="relative rounded-xl overflow-hidden shrink-0 lg:w-64 w-80 h-72">
-              <Image src={images[5]} alt="Project 6" fill sizes="300px" className="object-cover hover:brightness-110 transition-all transparent-gradient-special-needs" />
+        {/* ── H2: What Calgary Homeowners Say ── */}
+        <section className="w-full mt-4">
+          <div className="text-center mx-auto mb-10 px-4">
+            <h2 className="text-3xl sm:text-4xl font-extrabold border-b-2 p-2 border-[#477a40] inline-block">
+              What Calgary Homeowners Say
+            </h2>
+          </div>
+          <div className="w-screen left-1/2 pt-1 -ml-[50vw] bg-[url('/backgrounds/wood-background.jpg')] bg-cover bg-no-repeat bg-center pb-10 relative z-0">
+            <div className="max-w-5xl mx-auto relative z-10">
+              <CommentCarousel />
             </div>
           </div>
+        </section>
 
-          <div className="mt-4 border-t-4 border-[#477a40] md:w-full max-w-xs md:max-w-2xl mx-auto p-4 text-xl md:text-2xl text-center flex justify-center">
-            <Link href="/projects" className="font-bold text-black">
-              <span className="hover:underline hover:underline-offset-4 active:underline active:underline-offset-4  active:text-[19px] lg:active:text-[23px]">See More Projects</span> →
-            </Link>
+        {/* ── H2: Frequently Asked Questions ── */}
+        <FAQSection />
+
+        {/* ── H2: Get a Free Calgary Landscaping Quote ── */}
+        <section className="w-full py-16 sm:py-20 bg-white">
+          <div className="max-w-2xl mx-auto px-4 text-center">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">
+              Get a Free Calgary Landscaping Quote
+            </h2>
+            <p className="text-gray-500 mb-8 text-base sm:text-lg">
+              Fence installation, deck building, pergola construction, sod &amp; more — serving Calgary and surrounding areas. No pressure, no hidden fees.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                href="/services-quote"
+                className="px-8 py-4 bg-[#477a40] hover:bg-[#3a6433] active:bg-[#2f5a29] text-white rounded-full font-semibold text-lg transition-all hover:scale-105 active:scale-95 shadow-lg text-center"
+              >
+                Request a Free Estimate
+              </Link>
+              <Link
+                href="/book"
+                className="px-8 py-4 border-2 border-[#477a40] text-[#477a40] hover:bg-[#477a40] hover:text-white rounded-full font-semibold text-lg transition-all hover:scale-105 active:scale-95 text-center"
+              >
+                Book an Appointment
+              </Link>
+            </div>
           </div>
-
-
-        </div>
-    <div>
-      <div className="text-center mx-auto mb-10 mt-8">
-        <h2 className="text-3xl font-extrabold border-b-2 p-2 border-[#477a40] inline-block">
-          What Our Clients Say
-        </h2>
-      </div>
-
-
-      <div className="w-screen left-1/2 pt-1 -ml-[50vw] bg-[url('/backgrounds/wood-background.jpg')] bg-cover bg-no-repeat bg-center pb-10 relative z-0">
-        <div className="max-w-5xl lg:scale-100 scale-100 sm:scale-110 mx-auto relative z-10">
-          <CommentCarousel />
-        </div>
-      </div>
-    </div>
-
-
-        {/* Fixed sizing on mobile screens */}
-      <div className="flex justify-center items-center w-full py-12 bg-linear-to-b from-white via-[#f8fbf8]/50 to-white">
-        <div className="relative p-4 mx-auto text-white rounded-2xl bg-[#477a40] text-xl sm:text-2xl font-bold w-72 sm:w-80 max-w-[90vw] text-center hover:cursor-pointer border-2 border-transparent hover:bg-white hover:border-[#477A40] hover:text-[#477A40] transition-all duration-300 hover:scale-105 active:scale-95 shadow-xl md:shadow-2xl group">
-          <Link href="/book" className="block w-full h-full py-3">
-            Schedule an Appointment Today!
-          </Link>
-          <span className="opacity-0 group-hover:opacity-100 absolute bottom-3 right-4 text-xl sm:text-2xl font-bold group-hover:translate-x-1 transition-transform duration-300 z-20">
-            →
-          </span>
-        </div>
-      </div>
-
-
+        </section>
 
       </main>
 
       <Footer />
-
     </div>
   );
 }
-
-
-// write a review button under client reviews for users logged in (sprint 2)
-
-// ADD easy slide to comments
-// clicking on the comment in focus shows a pop up modal of full customer review
-
-// add animation to hamburger menu click (might not be best for low performance devices)
-// NAVBAR TURNS INTO x on menu click if page shadow doesnt work
-
-
-
-// Google Reviews Page
-// https://www.google.com/search?client=opera-gx&q=landscape+craftsmen&sourceid=opera&ie=UTF-8&oe=UTF-8#lrd=0x537163001a82a44d:0x6501feae9dbe49fe,1,,,,
-
-
-
-

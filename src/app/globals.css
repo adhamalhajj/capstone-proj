@@ -18,6 +18,27 @@ body {
   font-family: Arial, Helvetica, sans-serif, Inter;
 }
 
+/* ===== SHADER HERO ANIMATIONS ===== */
+@keyframes hero-fade-in-down {
+  from { opacity: 0; transform: translateY(-20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes hero-fade-in-up {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.hero-fade-in-down {
+  animation: hero-fade-in-down 0.8s ease-out forwards;
+}
+.hero-fade-in-up {
+  animation: hero-fade-in-up 0.8s ease-out forwards;
+  opacity: 0;
+}
+.hero-delay-200 { animation-delay: 0.2s; }
+.hero-delay-400 { animation-delay: 0.4s; }
+.hero-delay-600 { animation-delay: 0.6s; }
+.hero-delay-800 { animation-delay: 0.8s; }
+
 /* Potential fix for scrollbar issue moving page content on drop down menu */
 
 /* html {
@@ -4601,34 +4622,4 @@ body {
   }
 }
 
-
-html {
-  scrollbar-width: thin;
-  scrollbar-color: #477a40 #f3f3f3;
-}
-
-html::-webkit-scrollbar {
-  width: 12px;
-}
-
-html::-webkit-scrollbar-track {
-  background: #f3f3f3;
-}
-
-html::-webkit-scrollbar-thumb {
-  background-color: #477a40;
-  border-radius: 999px;
-  border: 3px solid #f3f3f3;
-}
-
-html::-webkit-scrollbar-thumb:hover {
-  background-color: #2f5a29;
-}
-
-/* tetsing deployment */
-
-
-
 /* LOL TYPE SHI GANG GANG */
-
-/* ONG TYPE SHITU */

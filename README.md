@@ -95,12 +95,3 @@ npm run build
 ```bash
 npm run db:setup
 ```
-
-
-Accreditation:
-
-Levi Moreau (Project Manager)
-Adlin Firdaus (CI/CD)
-Theo Sanchez (Frontend Dev)
-Jiro Roales (Backend Dev)
-Mrinal Jha (QA)

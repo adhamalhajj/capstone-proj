@@ -1,109 +1,144 @@
 import Image from "next/image";
 import Link from "next/link";
 
+const FOOTER_LINKS = [
+  {
+    title: "Services",
+    links: [
+      { href: "/services?service=fence",        label: "Fence Installation Calgary" },
+      { href: "/services?service=deck-railing", label: "Deck Builder Calgary" },
+      { href: "/services?service=pergola",       label: "Pergola Calgary" },
+      { href: "/services?service=sod",           label: "Sod Installation Calgary" },
+      { href: "/services?service=trees-shrubs",  label: "Trees & Shrubs" },
+    ],
+  },
+  {
+    title: "Company",
+    links: [
+      { href: "/about",   label: "About Us" },
+      { href: "/projects", label: "Our Projects" },
+      { href: "/contact",  label: "Contact" },
+      { href: "/book",     label: "Book Appointment" },
+    ],
+  },
+  {
+    title: "Get a Quote",
+    links: [
+      { href: "/services-quote", label: "Request Free Estimate" },
+      { href: "/services-quote", label: "Fence Quote" },
+      { href: "/services-quote", label: "Deck Quote" },
+      { href: "/services-quote", label: "Pergola Quote" },
+      { href: "/services-quote", label: "Sod Quote" },
+    ],
+  },
+  {
+    title: "Legal",
+    links: [
+      { href: "/terms",   label: "Terms & Conditions" },
+      { href: "/contact", label: "Privacy Policy" },
+    ],
+  },
+];
+
 export default function Footer() {
   return (
-    <footer className="bg-[#31270C] w-full mt-20 text-white py-10 px-6 md:px-12 lg:px-16">
-      <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 items-center mb-8 pb-8 border-b border-[#31270C]/30">
-          
-          <div className="text-center md:text-left">
-            <h2 className="text-2xl md:text-3xl font-bold mb-4 text-white tracking-tight">
-              Landscape Craftsmen
-            </h2>
-            <div className="space-y-2 text-sm md:text-base">
-              <a 
-                href="mailto:landscapecraftsmen@yahoo.com" 
-                className="block hover:text-[#477a40] transition-colors duration-200 font-medium"
+    <footer className="bg-[#1a1f1a] w-full text-white">
+      {/* Main grid */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-10">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-10 md:gap-8">
+
+          {/* Brand column — spans 2 on desktop */}
+          <div className="md:col-span-2 flex flex-col gap-5">
+            <Link href="/" aria-label="Landscape Craftsmen home">
+              <Image
+                src="/icons/official_title_logo.svg"
+                alt="Landscape Craftsmen — Calgary Landscaping"
+                width={140}
+                height={42}
+                className="h-10 w-auto object-contain brightness-200"
+              />
+            </Link>
+
+            <p className="text-sm text-gray-400 leading-relaxed max-w-xs">
+              Calgary&apos;s trusted landscaping contractor — fence installation, deck building, pergola construction, sod &amp; more. Licensed &amp; insured.
+            </p>
+
+            <div className="space-y-1.5 text-sm">
+              <a
+                href="tel:+15874386672"
+                className="flex items-center gap-2 text-gray-300 hover:text-[#7dc76a] transition-colors"
               >
-                landscapecraftsmen@yahoo.com
+                <span>📞</span> (587) 438-6672
               </a>
-              <a 
-                href="tel:+15874386672" 
-                className="block hover:text-[#477a40] transition-colors duration-200 font-medium"
+              <a
+                href="mailto:landscapecraftsmen@yahoo.com"
+                className="flex items-center gap-2 text-gray-300 hover:text-[#7dc76a] transition-colors break-all"
               >
-                (587) 438-6672
+                <span>✉️</span> landscapecraftsmen@yahoo.com
               </a>
-              <p className="text-[#D9D9D9]">Calgary, AB, Canada</p>
+              <p className="flex items-center gap-2 text-gray-400">
+                <span>📍</span> Calgary, AB, Canada
+              </p>
+            </div>
+
+            {/* Social icons */}
+            <div className="flex gap-3 mt-1">
+              <a
+                href="https://www.facebook.com/p/Landscape-Craftsmen-61575247719417/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Landscape Craftsmen on Facebook"
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-[#477a40] transition-colors"
+              >
+                <Image src="/icons/facebook.png" alt="Facebook" width={18} height={18} className="w-4 h-4 object-contain brightness-200" />
+              </a>
+              <a
+                href="https://www.instagram.com/landscape.craftsmen"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Landscape Craftsmen on Instagram"
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-[#477a40] transition-colors"
+              >
+                <Image src="/icons/instagram.png" alt="Instagram" width={18} height={18} className="w-4 h-4 object-contain brightness-200" />
+              </a>
             </div>
           </div>
 
-          <nav className="hidden md:block text-center">
-            <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
-            <div className="flex flex-col space-y-2 text-sm">
-              <Link href="/services" className="hover:text-[#477a40] transition-colors duration-200">
-                Services
-              </Link>
-              <Link href="/quote" className="hover:text-[#477a40] transition-colors duration-200">
-                Get Quote
-              </Link>
-              <Link href="/about" className="hover:text-[#477a40] transition-colors duration-200">
-                About Us
-              </Link>
-              <Link href="/contact" className="hover:text-[#477a40] transition-colors duration-200">
-                Contact
-              </Link>
+          {/* Link columns */}
+          {FOOTER_LINKS.map((col) => (
+            <div key={col.title}>
+              <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">
+                {col.title}
+              </h3>
+              <ul className="space-y-2.5">
+                {col.links.map((link) => (
+                  <li key={link.label}>
+                    <Link
+                      href={link.href}
+                      className="text-sm text-gray-400 hover:text-white transition-colors"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
-          </nav>
-
-          <div className="flex justify-center md:justify-end space-x-6">
-            <a
-              href="https://www.facebook.com/p/Landscape-Craftsmen-61575247719417/"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Facebook"
-              className="group flex items-center justify-center"
-            >
-              <Image 
-                src="/icons/facebook.png" 
-                alt="Facebook" 
-                height={24} 
-                width={24} 
-                className="w-8 h-8 hover:scale-110 transition-transform duration-200"
-              />
-            </a>
-            <a
-              href="https://www.instagram.com/landscape.craftsmen"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Instagram"
-              className="group"
-            >
-              <Image 
-                src="/icons/instagram.png" 
-                alt="Instagram" 
-                height={24} 
-                width={24} 
-                className="w-10 h-10 hover:scale-110 transition-transform duration-200"
-              />
-            </a>
-          </div>
+          ))}
         </div>
+      </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-8 border-t border-[#31270C]/20">
-          
-          <nav className="flex flex-wrap justify-center gap-4 text-sm md:hidden">
-            <Link href="/services" className="hover:text-[#477a40] transition-colors duration-200 font-medium">
-              Services
+      {/* Bottom bar */}
+      <div className="border-t border-white/10">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
+          <p>&copy; {new Date().getFullYear()} Landscape Craftsmen. All rights reserved. Calgary, AB.</p>
+          <p>
+            Fence · Deck · Pergola · Sod ·{" "}
+            <Link href="/services-quote" className="hover:text-[#7dc76a] transition-colors">
+              Free Estimate
             </Link>
-            <Link href="/quote" className="hover:text-[#477a40] transition-colors duration-200 font-medium">
-              Get Quote
-            </Link>
-            <Link href="/about" className="hover:text-[#477a40] transition-colors duration-200 font-medium">
-              About Us
-            </Link>
-            <Link href="/contact" className="hover:text-[#477a40] transition-colors duration-200 font-medium">
-              Contact
-            </Link>
-          </nav>
-          
-          <div className="text-center text-xs text-[#D9D9D9] mt-4 sm:mt-0">
-            <p>&copy; 2026 Landscape Craftsmen. All rights reserved.</p>
-          </div>
+          </p>
         </div>
       </div>
     </footer>
   );
 }
-
-

@@ -45,7 +45,7 @@ export default function DropDownMenu ({ onClose, isAnimatingOut }) {
 
   return (
     // Changed from absolute to fixed to prevent horizontal scroll and see it it works properly for mobile viewports
-    <div className={`fixed top-30 right-0 z-999 pointer-events-none animate-slideIn ${isAnimatingOut ? 'animate-slideOut' : 'animate-slideIn'
+    <div className={`fixed top-[64px] sm:top-[68px] right-0 z-50 pointer-events-none ${isAnimatingOut ? 'animate-slideOut' : 'animate-slideIn'
     }`}>
       
       {/* original width sm:w-80 and mobile w-75 */}
@@ -58,7 +58,7 @@ export default function DropDownMenu ({ onClose, isAnimatingOut }) {
 
 
         <Link href="/projects" onClick={onClose}>Projects</Link>
-        <Link href="/quote" onClick={onClose}>Get A Quote</Link>
+        <Link href="/services-quote" onClick={onClose}>Get A Quote</Link>
         <Link href="/book" onClick={onClose}>Book An Appointment</Link>
         {user?.role === "client" && <Link href="/client" onClick={onClose}>Your Dashboard</Link>}
         {user?.role === "admin" && <Link href="/dashboard" onClick={onClose}>Admin</Link>}

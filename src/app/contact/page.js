@@ -281,7 +281,6 @@ export default function Contact() {
 
 //     </main>
 //   );
-//  BS FIXES
 // }
 
 

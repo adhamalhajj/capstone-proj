@@ -1,156 +1,101 @@
-"use client"
+"use client";
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import Image from "next/image";
-
-
 import DropDownMenu from "./DropDownMenu.js";
 
-export default function NavBar () {
+export default function NavBar() {
+  const [open, setOpen] = useState(false);
+  const [animatingOut, setAnimatingOut] = useState(false);
 
-  const [navClicked, setNavClicked] = useState(false);
-  const [isAnimatingOut, setIsAnimatingOut] = useState(false);
-
-  const handleNavClick = () => {
-    if (!navClicked) {
-      setNavClicked(true);
-      setIsAnimatingOut(false);
-
+  const toggleMenu = () => {
+    if (!open) {
+      setOpen(true);
+      setAnimatingOut(false);
     } else {
-      setIsAnimatingOut(true);
-
+      setAnimatingOut(true);
     }
-  }
-
-  const closeMenu = () => {
-    setIsAnimatingOut(true);
   };
 
-  // timeout delay should be 300 to match animation duration but ti glitches due to rendering issues n browser limitations used 280
+  const closeMenu = () => setAnimatingOut(true);
+
+  // Close after slide-out animation completes
   useEffect(() => {
-    if (isAnimatingOut) {
-      const timer = setTimeout(() => {
-        setNavClicked(false);
-        setIsAnimatingOut(false);
-      },280);
+    if (!animatingOut) return;
+    const t = setTimeout(() => {
+      setOpen(false);
+      setAnimatingOut(false);
+    }, 280);
+    return () => clearTimeout(t);
+  }, [animatingOut]);
 
-      return () => clearTimeout(timer);
-    }
-  }, [isAnimatingOut]);
-
+  // Lock body scroll while menu is open
   useEffect(() => {
-    if (navClicked && !isAnimatingOut) {
-      document.body.style.overflow = 'hidden';
-
-    } else {
-      document.body.style.overflow = 'unset';
-
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [navClicked, isAnimatingOut]);
-
+    document.body.style.overflow = open && !animatingOut ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [open, animatingOut]);
 
   return (
-      <>
-        {/* Find a good bg-black/# thats not too dark or light for background dim */}
-        {(navClicked || isAnimatingOut) && (
-          <div 
-            className="fixed inset-0 bg-black/35 z-998 animate-fadeIn pointer-events-auto"
-            onClick={closeMenu}
-          />
-        )}
-          <nav className="bg-[#477a40] h-30 w-full p-4 flex text-white items-center justify-between">
+    <>
+      {/* Dim backdrop */}
+      {(open || animatingOut) && (
+        <div
+          className="fixed inset-0 bg-black/35 z-40 animate-fadeIn"
+          onClick={closeMenu}
+        />
+      )}
 
-          {/* Test padding with ml-2 */}
-          <Link href="/" className="sm:ml-4 flex items-center">
-            <Image 
-            // Try _noletters as an alternative
-              src="/icons/official_title_logo.svg" 
-              alt="Company Logo" 
-              height={28}
-              width={75}  
-              className="h-13 w-auto object-contain sm:h-15 sm:scale-105" 
-              priority 
-            />
+      <nav className="bg-[#477a40] w-full px-4 sm:px-6 py-3 flex items-center justify-between text-white">
+
+        {/* Logo */}
+        <Link href="/" className="flex items-center shrink-0">
+          <Image
+            src="/icons/official_title_logo.svg"
+            alt="Landscape Craftsmen"
+            height={40}
+            width={110}
+            className="h-10 sm:h-11 w-auto object-contain"
+            priority
+          />
+        </Link>
+
+        {/* Desktop nav links */}
+        <ul className="hidden lg:flex items-center gap-8 font-medium text-sm">
+          <li><Link href="/about"    className="hover:opacity-70 transition-opacity">About</Link></li>
+          <li><Link href="/services" className="hover:opacity-70 transition-opacity">Services</Link></li>
+          <li><Link href="/projects" className="hover:opacity-70 transition-opacity">Projects</Link></li>
+          <li><Link href="/contact"  className="hover:opacity-70 transition-opacity">Contact</Link></li>
+        </ul>
+
+        {/* Right side */}
+        <div className="flex items-center gap-3">
+          {/* CTA — desktop only */}
+          <Link
+            href="/services-quote"
+            className="hidden lg:inline-flex items-center px-5 py-2 bg-white text-[#477a40] rounded-full font-semibold text-sm hover:bg-gray-100 active:bg-gray-200 transition-colors shadow-sm"
+          >
+            Get a Quote
           </Link>
 
+          {/* Hamburger / close button */}
+          <button
+            onClick={toggleMenu}
+            aria-label={open ? "Close menu" : "Open menu"}
+            aria-expanded={open}
+            className="relative w-10 h-10 flex flex-col items-center justify-center gap-[6px] p-2 hover:opacity-70 active:opacity-50 transition-opacity"
+          >
+            <span className={`block w-6 h-0.5 bg-white rounded-full transition-all duration-300 origin-center ${open && !animatingOut ? 'rotate-45 translate-y-[8px]' : ''}`} />
+            <span className={`block w-6 h-0.5 bg-white rounded-full transition-all duration-300 ${open && !animatingOut ? 'opacity-0 scale-x-0' : ''}`} />
+            <span className={`block w-6 h-0.5 bg-white rounded-full transition-all duration-300 origin-center ${open && !animatingOut ? '-rotate-45 -translate-y-[8px]' : ''}`} />
+          </button>
+        </div>
+      </nav>
 
-              {/* Original stuff */}
-              
-              {/* <Link href="/">
-                <h1 className="text-2xl font-bold flex flex-col">
-                  <span>Landscape</span>
-                  <span>Craftsmen</span>
-                </h1>              
-              </Link> */}
-
-
-            {/* <div className="flex gap-5 items-center">
-              <Link href="/">
-                <Image src="/icons/Landscape_craftsmen_official_title_logo.svg" alt="Company Logo" height="400" width="400" className="h-20 w-20" priority/>   */}
-                
-                {/* PLacehodler image logo */}
-                {/* <div className="w-20 bg-white h-20 text-black font-bold text-2xl text-center pt-5">Logo</div> */}
-              {/* </Link>
-
-              <Link href="/">
-                <h1 className="text-2xl font-bold flex flex-col">
-                  <span>Landscape</span>
-                  <span>Craftsmen</span>
-                </h1>              
-              </Link>
-
-            </div> */}
-
-
-
-            {/* Prefer the thinner font on static nav items (semibold should be used) */}
-            <div className="flex justify-center items-center lg:gap-20 md:mr-10 lg:mr-10">
-              <ul className="hidden lg:flex gap-10 ml-20 font-medium">
-                <li><Link href="/about" className="hover:opacity-60">About</Link></li>
-                <li><Link href="/services" className="hover:opacity-60">Services</Link></li>
-                <li><Link href="/contact" className="hover:opacity-60">Contact</Link></li>
-              </ul>
-
-              <div className="relative z-10 p-2 hover:opacity-50 hover:cursor-pointer flex flex-col gap-2" onClick={handleNavClick}>
-                <hr className="w-10 border-white"/>
-                <hr className="w-10 border-white"/>
-                <hr className="w-10 border-white"/>
-              </div>
-            </div>
-
-
-          </nav>
-          
-          {/* NOTE: Cant render here! */}
-          {(navClicked || isAnimatingOut) && (<DropDownMenu onClose={closeMenu} isAnimatingOut={isAnimatingOut} />) }
-      </>
-
+      {/* Dropdown */}
+      {(open || animatingOut) && (
+        <DropDownMenu onClose={closeMenu} isAnimatingOut={animatingOut} />
+      )}
+    </>
   );
-
 }
-
-
-
-// Theo's Logo
-
-              // <div className="justify-self-center">
-              //   <Link href="/" className="block">
-              //     <div className="w-40 h-20 flex items-center justify-center">
-              //       <Image
-              //         src="/icons/logo0.png"
-              //         alt="Company logo"
-              //         width={400}
-              //         height={400}
-              //         className="object-contain"
-              //         priority
-              //       />
-              //     </div>
-              //   </Link>
-              // </div>
-
-
-              

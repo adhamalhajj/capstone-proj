@@ -1,4 +1,4 @@
-// app/book/BookContent.js bug fixes
+// app/book/BookContent.js
 "use client";
 
 import Link from "next/link";
